@@ -204,29 +204,33 @@ st.divider()
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("📈 Confidence Score Trend")
+    st.subheader("🔥 Emotion Heatmap")
 
-    fig6 = px.line(
-        history_df,
-        x="timestamp",
-        y="dominant_score",
-        title="AI Confidence Over Time",
-        markers=True,
-        color_discrete_sequence=["cornflowerblue"]
-    )
+    if len(history_df) >= 2:
+        heatmap_df = history_df[emotion_cols].copy()
 
-    # average line
-    avg = history_df["dominant_score"].mean()
-    fig6.add_hline(
-        y=avg,
-        line_dash="dash",
-        line_color="red",
-        annotation_text=f"Avg: {avg:.1f}%",
-        annotation_position="top right"
-    )
-    fig6.update_layout(yaxis_range=[0, 110])
-    st.plotly_chart(fig6, use_container_width=True)
+        # fix — make timestamps unique by adding row number
+        labels = [
+            f"{ts} #{i+1}"
+            for i, ts in enumerate(
+                history_df["timestamp"].dt.strftime("%m/%d %H:%M")
+            )
+        ]
+        heatmap_df.index = labels
 
+        # fix — drop any remaining duplicates
+        heatmap_df = heatmap_df[~heatmap_df.index.duplicated(keep="first")]
+
+        fig4 = px.imshow(
+            heatmap_df.T,
+            color_continuous_scale="RdYlGn",
+            title="Emotion Intensity per Analysis",
+            labels=dict(x="Analysis", y="Emotion", color="Score (%)"),
+            aspect="auto"
+        )
+        st.plotly_chart(fig4, use_container_width=True)
+    else:
+        st.info("Need at least 2 analyses to show heatmap.")
 with col2:
     st.subheader("🕐 Analysis by Hour of Day")
 
