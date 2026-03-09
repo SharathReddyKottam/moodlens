@@ -1,6 +1,6 @@
 # 🔍 MoodLens
 
-🌐 **Live Demo:** [moodlens.streamlit.app](https://moodlens.streamlit.app)
+🌐 **Live Demo:** [moodlens.streamlit.app](https://sharathreddykottam-moodlens.streamlit.app/)
 > Analyze emotions, track your daily mood and build journaling streaks — built with Python, Streamlit & HuggingFace AI
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square)
