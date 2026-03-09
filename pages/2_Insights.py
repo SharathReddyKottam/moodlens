@@ -208,18 +208,7 @@ with col1:
 
     if len(history_df) >= 2:
         heatmap_df = history_df[emotion_cols].copy()
-
-        # fix — make timestamps unique by adding row number
-        labels = [
-            f"{ts} #{i+1}"
-            for i, ts in enumerate(
-                history_df["timestamp"].dt.strftime("%m/%d %H:%M")
-            )
-        ]
-        heatmap_df.index = labels
-
-        # fix — drop any remaining duplicates
-        heatmap_df = heatmap_df[~heatmap_df.index.duplicated(keep="first")]
+        heatmap_df.index = history_df["timestamp"].dt.strftime("%m/%d %H:%M")
 
         fig4 = px.imshow(
             heatmap_df.T,
