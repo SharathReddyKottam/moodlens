@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import numpy as np
 import os
 from utils.analyzer import EMOTION_COLORS, EMOTION_EMOJIS
 
@@ -71,7 +72,6 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("🥧 Emotion Distribution")
 
-    # average score per emotion across all analyses
     avg_emotions = history_df[emotion_cols].mean().reset_index()
     avg_emotions.columns = ["Emotion", "Average Score (%)"]
     avg_emotions = avg_emotions.sort_values("Average Score (%)", ascending=False)
@@ -86,7 +86,7 @@ with col1:
         hole=0.4
     )
     fig1.update_traces(textposition="inside", textinfo="percent+label")
-    st.plotly_chart(fig1, use_container_width=True)
+    st.plotly_chart(fig1, use_container_width=True, key="pie_chart")
 
 with col2:
     st.subheader("🏆 Dominant Emotion Counts")
@@ -108,18 +108,16 @@ with col2:
         showlegend=False,
         yaxis_range=[0, dominant_counts["Count"].max() * 1.3]
     )
-    st.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig2, use_container_width=True, key="bar_chart")
 
 st.divider()
 
 # --- ROW 2: EMOTIONS OVER TIME ---
 st.subheader("📅 Emotions Over Time")
 
-# group by date
 time_df = history_df.groupby("date")[emotion_cols].mean().reset_index()
 time_df["date"] = pd.to_datetime(time_df["date"])
 
-# let user pick which emotions to show
 selected_emotions = st.multiselect(
     "Select emotions to display:",
     emotion_cols,
@@ -147,7 +145,7 @@ if selected_emotions:
         yaxis_range=[0, 100],
         hovermode="x unified"
     )
-    st.plotly_chart(fig3, use_container_width=True)
+    st.plotly_chart(fig3, use_container_width=True, key="line_chart")
 
 st.divider()
 
@@ -158,24 +156,26 @@ with col1:
     st.subheader("🔥 Emotion Heatmap")
 
     if len(history_df) >= 2:
-        heatmap_df = history_df[emotion_cols].copy()
-        heatmap_df.index = history_df["timestamp"].dt.strftime("%m/%d %H:%M")
+        values = history_df[emotion_cols].values.T
+        x_labels = [f"#{i+1}" for i in range(len(history_df))]
+        y_labels = emotion_cols
 
         fig4 = px.imshow(
-            heatmap_df.T,
+            values,
+            x=x_labels,
+            y=y_labels,
             color_continuous_scale="RdYlGn",
             title="Emotion Intensity per Analysis",
             labels=dict(x="Analysis", y="Emotion", color="Score (%)"),
             aspect="auto"
         )
-        st.plotly_chart(fig4, use_container_width=True)
+        st.plotly_chart(fig4, use_container_width=True, key="heatmap_chart")
     else:
         st.info("Need at least 2 analyses to show heatmap.")
 
 with col2:
     st.subheader("🕸️ Emotion Radar Chart")
 
-    # average scores for radar
     avg_scores = history_df[emotion_cols].mean()
 
     fig5 = go.Figure()
@@ -196,7 +196,7 @@ with col2:
         title="Average Emotion Radar",
         showlegend=False
     )
-    st.plotly_chart(fig5, use_container_width=True)
+    st.plotly_chart(fig5, use_container_width=True, key="radar_chart")
 
 st.divider()
 
@@ -204,22 +204,28 @@ st.divider()
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("🔥 Emotion Heatmap")
+    st.subheader("📈 Confidence Score Trend")
 
-    if len(history_df) >= 2:
-        heatmap_df = history_df[emotion_cols].copy()
-        heatmap_df.index = history_df["timestamp"].dt.strftime("%m/%d %H:%M")
+    fig6 = px.line(
+        history_df,
+        x="timestamp",
+        y="dominant_score",
+        title="AI Confidence Over Time",
+        markers=True,
+        color_discrete_sequence=["cornflowerblue"]
+    )
 
-        fig4 = px.imshow(
-            heatmap_df.T,
-            color_continuous_scale="RdYlGn",
-            title="Emotion Intensity per Analysis",
-            labels=dict(x="Analysis", y="Emotion", color="Score (%)"),
-            aspect="auto"
-        )
-        st.plotly_chart(fig4, use_container_width=True)
-    else:
-        st.info("Need at least 2 analyses to show heatmap.")
+    avg = history_df["dominant_score"].mean()
+    fig6.add_hline(
+        y=avg,
+        line_dash="dash",
+        line_color="red",
+        annotation_text=f"Avg: {avg:.1f}%",
+        annotation_position="top right"
+    )
+    fig6.update_layout(yaxis_range=[0, 110])
+    st.plotly_chart(fig6, use_container_width=True, key="confidence_chart")
+
 with col2:
     st.subheader("🕐 Analysis by Hour of Day")
 
@@ -240,7 +246,7 @@ with col2:
         showlegend=False,
         xaxis=dict(tickmode="linear", tick0=0, dtick=1)
     )
-    st.plotly_chart(fig7, use_container_width=True)
+    st.plotly_chart(fig7, use_container_width=True, key="hour_chart")
 
 st.divider()
 
